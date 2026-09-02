@@ -1,0 +1,54 @@
+
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: bankapp-database
+    environment:
+      - POSTGRES_USER=mikky_banker
+      - POSTGRES_PASSWORD=TechcrushSecurePass123
+      - POSTGRES_DB=bank_ledger
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: bankapp-backend
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - database
+    environment:
+      - DB_HOST=database
+      - DB_USER=mikky_banker
+      - DB_PASSWORD=TechcrushSecurePass123
+      - DB_NAME=bank_ledger
+      - DB_PORT=5432
+
+  frontend:
+    build: ./frontend
+    container_name: bankapp-frontend
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: bankapp-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  pg-data:
+
